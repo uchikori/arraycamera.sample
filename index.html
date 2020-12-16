@@ -1,1 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r122/three.min.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <script src="https://threejs.org/examples/js/lights/RectAreaLightUniformsLib.js"></script>
+
+    <style>
+        body{
+            margin: 0;
+        }
+    </style>
+
+    
+</head>
+<body>
+    <canvas id="myCanvas"></canvas>
+<script>
+    //ページの読み込みを待つ
+    window.addEventListener('load', init);
+    function init() {
+
+        const AMOUNT = 10;
+
+
+        //サイズを指定
+        const width = (window.innerWidth / AMOUNT) * window.devicePixelRatio;
+        const height = (window.innerHeight / AMOUNT) * window.devicePixelRatio;
+
+        let rot = 0;
+
+        //レンダリング処理
+        const renderer = new THREE.WebGLRenderer({
+            canvas: document.querySelector('#myCanvas'),
+            antialias: true
+        });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+
+        window.addEventListener('resize', onWindowResize, false);
+
+        //シーンを作成(シーンとは３D空間のこと,3Dオブジェクトそのものや光源の置き場)
+        const scene = new THREE.Scene();
+        
+        const cameras = [];
+
+        //縦に6行、横に6列カメラを配置するためのループ処理
+        for(let y = 0; y < AMOUNT; y++){
+            for(let x = 0; x < AMOUNT; x++){
+
+                const subcamera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 10)
+                subcamera.viewport = new THREE.Vector4(Math.floor(x * width), Math.floor(y * height), Math.ceil(width), Math.ceil(height));
+                subcamera.position.x = (x / AMOUNT) - 0.5;
+                subcamera.position.y = 0.5 - (y / AMOUNT);
+                subcamera.position.z = 1.5;
+                subcamera.position.multiplyScalar(2);
+                subcamera.lookAt(0, 0, 0);
+                subcamera.updateMatrixWorld();
+                cameras.push(subcamera);
+            }
+        }
+        //カメラの作成
+        const camera = new THREE.ArrayCamera(cameras);
+        camera.position.z = 3;
+
+        //背景の作成
+        const geometryBackground = new THREE.PlaneBufferGeometry(100, 100);
+        const materialBackground = new THREE.MeshPhongMaterial({color: 0x333333});
+        const background = new THREE.Mesh(geometryBackground, materialBackground);
+        background.receiveShadow = true;
+        background.position.set(0, 0, -1);
+        scene.add(background);
+
+        //テキストオブジェクトの作成
+        const loader = new THREE.FontLoader();
+        loader.load('helvetiker_regular.typeface.json', function(font){
+            var textGeometry = new THREE.TextGeometry('Hello!',{
+                font: font,
+                size: 0.5,
+                height: 0.2,
+                curveSegments: 20,
+            });
+            var materials = [
+                new THREE.MeshBasicMaterial({color: 0xff0000, overdraw: 0.5}),
+                new THREE.MeshBasicMaterial({color: 0x000000, overdraw: 0.5})
+            ];
+            var textMesh = new THREE.Mesh(textGeometry, materials);
+            textMesh.position.set(0, 0, 0);
+            scene.add(textMesh);
+
+            rendering();
+            function rendering(){
+                requestAnimationFrame(rendering);
+
+                textMesh.rotation.y += 0.05;
+                // textMesh.rotation.z += 0.01;
+                renderer.render(scene, camera);
+            }
+            
+        });
+        
+        //シーン全体にライトを当てる
+        scene.add(new THREE.AmbientLight(0x222244));
+
+        //平行光源
+        const light = new THREE.DirectionalLight();
+        light.position.set(0.5, 0.5, 1);
+        light.castShadow = true;
+        light.shadow.camera.zoom = 4;
+        scene.add(light);
+
+
+
+        //リサイズ時の処理
+        function onWindowResize(){
+            const ASPECT_RATIO = window.innerWidth / window.innerHeight;
+            const width = (window.innerWidth / AMOUNT) * window.devicePixelRatio;
+            const height = (window.innerHeight / AMOUNT) * window.devicePixelRatio;
+
+            camera.aspect = ASPECT_RATIO;
+            camera.updateProjectionMatrix();
+
+            for(let y = 0; y < AMOUNT; y ++){
+                for(let x = 0; x < AMOUNT; x++){
+                    const subcamera = camera.cameras[ AMOUNT * y + x];
+
+                    subcamera.viewport.set(
+                        Math.floor(x * width),
+                        Math.floor(y * height),
+                        Math.ceil(width),
+                        Math.ceil(height),
+                    );
+                    subcamera.aspect = ASPECT_RATIO;
+                    subcamera.updateProjectionMatrix();
+                }
+            }
+            renderer.setSize(window.innerWidth, window.innerHeight)
+        }
+
+        /*初回実行*/
+        animate();
+        //マイフレームごとに実行されるループイベント
+        function animate() {
+
+            //レンダリング
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+    }
+</script>
+</body>
+</html>

@@ -80,7 +80,7 @@
         //テキストオブジェクトの作成
         const loader = new THREE.FontLoader();
         loader.load('helvetiker_regular.typeface.json', function(font){
-            var textGeometry = new THREE.TextGeometry('UCHIWA!!',{
+            var textGeometry = new THREE.TextGeometry('UCHIWA!',{
                 font: font,
                 size: 0.5,
                 height: 0.2,
@@ -91,7 +91,7 @@
                 new THREE.MeshBasicMaterial({color: 0x000000, overdraw: 0.5})
             ];
             var textMesh = new THREE.Mesh(textGeometry, materials);
-            textMesh.position.set(0, 0, 0);
+            textMesh.position.set(-1.2, -0.2, 0);
             scene.add(textMesh);
 
             rendering();
